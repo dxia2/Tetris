@@ -44,23 +44,19 @@ class Board{
     }
     loadPiece(piece, position){
         for(let i = 0; i < piece.shape.length; i++){
-            piece.shape[i].x += position.x;
-            piece.shape[i].y += position.y;
 
             this.currentHoldingPiece = piece;
-            this.grid[piece.shape[i].x][piece.shape[i].y] = piece.color;
+            this.currentHoldingPiece.position = position;
+            this.grid[piece.getShapePosition(i).x][piece.getShapePosition(i).y] = piece.color;
         }
     }
 
-    updateHoldingPiece(){
+    addGravity(){
         if(this.delayBtwPieceFall <= 0){
             // GRAVITY
-            for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-                // Set the piece's last position to be colorless
-                this.grid[this.currentHoldingPiece.shape[i].x][this.currentHoldingPiece.shape[i].y] = 0;
-                this.currentHoldingPiece.shape[i].y += 1;
-                this.grid[this.currentHoldingPiece.shape[i].x][this.currentHoldingPiece.shape[i].y] = this.currentHoldingPiece.color;
-            }
+            this.updateHoldingPiecePositionOnBoard(0);
+            this.currentHoldingPiece.position.y += 1;
+            this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color);
 
             this.delayBtwPieceFall = this.startDelayBtwPieceFall;
         }else{
@@ -73,25 +69,71 @@ class Board{
     }
 
     moveCurrentHoldingPiece(movement){
+        // Check if it is touching the sides of the board
+        if(this.currentHoldingPiece.position.x + movement.x < 0
+        || this.currentHoldingPiece.position.x + this.currentHoldingPiece.width + movement.x > COLUMNS){
+            return;
+        }
+        // Set the piece's last position to be colorless
+        this.updateHoldingPiecePositionOnBoard(0);
+        this.currentHoldingPiece.position.x += movement.x;
+        this.currentHoldingPiece.position.y += movement.y;
+        this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color)
+    }
+
+    updateHoldingPiecePositionOnBoard(color){
         for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-            // Set the piece's last position to be colorless
-            this.grid[this.currentHoldingPiece.shape[i].x][this.currentHoldingPiece.shape[i].y] = 0;
-            this.currentHoldingPiece.shape[i].x += movement.x;
-            this.currentHoldingPiece.shape[i].y += movement.y;
-            this.grid[this.currentHoldingPiece.shape[i].x][this.currentHoldingPiece.shape[i].y] = this.currentHoldingPiece.color;
+            this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y] = color;
         }
     }
 }
 
 class Piece{
     shape;
+    rotations;
     color;
-    constructor(shape, color){
-        this.shape = shape;
+    width;
+    position;
+    rotationIndex = 0;
+    constructor(rotations, color){
+        this.rotations = rotations;
         this.color = color;
+
+        this.shape = rotations[this.rotationIndex];
+
+        this.calculateWidth();
+    }
+    getShapePosition(index){
+        return new Vector2(this.shape[index].x + this.position.x, this.shape[index].y + this.position.y);
+    }
+    calculateWidth(){
+        let highestX = 0;
+        for(let i = 0; i < this.shape.length; i++){
+            if(this.shape[i].x > highestX){
+                highestX = this.shape[i].x;
+            }
+        }
+        this.width = highestX + 1;
+    }
+    rotate(isRotatingRight){
+        if(isRotatingRight){
+            this.rotationIndex++;
+            if(this.rotationIndex > this.rotations.length - 1){
+                this.rotationIndex = 0;
+            }
+        }else{
+            this.rotationIndex--
+            if(this.rotationIndex < 0){
+                this.rotationIndex = this.rotations.length - 1;
+            }
+        }
+
+        board.updateHoldingPiecePositionOnBoard(0);
+        this.shape = this.rotations[this.rotationIndex];
+        board.updateHoldingPiecePositionOnBoard(board.currentHoldingPiece.color);
+        this.calculateWidth();
     }
 }
-
 
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
@@ -102,12 +144,18 @@ let canvasHeight = 400;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 
-let board = new Board(ctx, 0.5);
+let board = new Board(ctx, 1);
 
 let iBlock = new Piece(
-    [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
+    [
+    [new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1), new Vector2(3, 1)],
+    [new Vector2(2, 0), new Vector2(2, 1), new Vector2(2, 2), new Vector2(2, 3)],
+    [new Vector2(0, 2), new Vector2(1, 2), new Vector2(2, 2), new Vector2(3, 2)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 2), new Vector2(1, 3)],
+    ],
     1
 )
+/*
 let jBlock = new Piece(
     [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1)],
     2
@@ -132,6 +180,7 @@ let zBlock = new Piece(
     [new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(2, 1)],
     7
 )
+*/
 
 board.loadPiece(iBlock, new Vector2(5, 0));
 
@@ -140,7 +189,6 @@ function draw(){
 
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
-
             board.moveCurrentHoldingPiece(new Vector2(-1, 0));
             timeBtwMove["a"] = startTimeBtwMovePiece;
         }else{
@@ -169,10 +217,33 @@ function draw(){
             timeBtwMove["s"] -= deltaTime;
         }
     }else{
-        timeBtwMove["s"] = 0;;
+        timeBtwMove["s"] = 0;
     }
 
-    board.updateHoldingPiece();
+    if(keysPressed["q"]){
+        if(timeBtwRotate["q"] <= 0){
+            board.currentHoldingPiece.rotate(false);
+            timeBtwRotate["q"] = startTimeBtwRotate;
+        }else{
+            timeBtwRotate["q"] -= deltaTime;
+        }
+    }else{
+        timeBtwRotate["q"] = 0;
+    }
+
+    if(keysPressed["e"]){
+        if(timeBtwRotate["e"] <= 0){
+            board.currentHoldingPiece.rotate(true);
+            timeBtwRotate["e"] = startTimeBtwRotate;
+        }else{
+            timeBtwRotate["e"] -= deltaTime;
+        }
+    }else{
+        timeBtwRotate["e"] = 0;
+    }
+
+
+    board.addGravity();
 
     board.draw();
     requestAnimationFrame(draw);

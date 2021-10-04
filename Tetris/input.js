@@ -2,7 +2,9 @@ let keysPressed = {
     "w": false,
     "a": false,
     "s": false,
-    "d": false
+    "d": false,
+    "q": false,
+    "e": false,
 }
 let timeBtwMove = {
     "w": 0,
@@ -10,7 +12,13 @@ let timeBtwMove = {
     "s": 0,
     "d": 0
 }
+
+let timeBtwRotate = {
+    "q": 0,
+    "e": 0
+}
 let startTimeBtwMovePiece = 0.1;
+let startTimeBtwRotate = 0.15;
 
 document.addEventListener("keydown", keyDownHandler);
 document.addEventListener("keyup", keyUpHandler);
