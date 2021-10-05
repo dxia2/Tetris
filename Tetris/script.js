@@ -12,7 +12,8 @@ class Board{
     currentHoldingPiece;
     startDelayBtwPieceFall;
     delayBtwPieceFall;
-    constructor(ctx, startDelayBtwPieceFall){
+    pieces;
+    constructor(ctx, startDelayBtwPieceFall, pieces){
         this.ctx = ctx;
         this.grid = new Array(COLUMNS);
         for(let i = 0; i < COLUMNS; i++){
@@ -27,6 +28,7 @@ class Board{
 
         this.startDelayBtwPieceFall = startDelayBtwPieceFall;
         this.delayBtwPieceFall = startDelayBtwPieceFall;
+        this.pieces = pieces;
     }
 
     draw(){
@@ -65,19 +67,18 @@ class Board{
     }
 
     pickNewHoldingPiece(){
-
+        this.loadPiece(this.pieces[randomInteger(this.pieces.length)], new Vector2(5, 0));
     }
 
     moveCurrentHoldingPiece(movement){
-        // Check if it is touching the sides of the board
-        if(this.currentHoldingPiece.position.x + movement.x < 0
-        || this.currentHoldingPiece.position.x + this.currentHoldingPiece.width + movement.x > COLUMNS){
-            return;
-        }
         // Set the piece's last position to be colorless
         this.updateHoldingPiecePositionOnBoard(0);
         this.currentHoldingPiece.position.x += movement.x;
         this.currentHoldingPiece.position.y += movement.y;
+        if(Piece.checkCollisionAgainstWalls(this.currentHoldingPiece)){
+            this.currentHoldingPiece.position.x -= movement.x;
+            this.currentHoldingPiece.position.y -= movement.y;
+        }
         this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color)
     }
 
@@ -92,7 +93,6 @@ class Piece{
     shape;
     rotations;
     color;
-    width;
     position;
     rotationIndex = 0;
     constructor(rotations, color){
@@ -100,22 +100,15 @@ class Piece{
         this.color = color;
 
         this.shape = rotations[this.rotationIndex];
-
-        this.calculateWidth();
     }
     getShapePosition(index){
         return new Vector2(this.shape[index].x + this.position.x, this.shape[index].y + this.position.y);
     }
-    calculateWidth(){
-        let highestX = 0;
-        for(let i = 0; i < this.shape.length; i++){
-            if(this.shape[i].x > highestX){
-                highestX = this.shape[i].x;
-            }
-        }
-        this.width = highestX + 1;
-    }
+    // Function for rotating the piece
     rotate(isRotatingRight){
+
+        let originalRotationIndex = this.rotationIndex;
+
         if(isRotatingRight){
             this.rotationIndex++;
             if(this.rotationIndex > this.rotations.length - 1){
@@ -127,11 +120,45 @@ class Piece{
                 this.rotationIndex = this.rotations.length - 1;
             }
         }
-
         board.updateHoldingPiecePositionOnBoard(0);
         this.shape = this.rotations[this.rotationIndex];
+
+            // Move the piece one block left and right to check if it still goes out of bounds
+        if(Piece.checkCollisionAgainstWalls(this)){
+            this.position.x++;
+            if(Piece.checkCollisionAgainstWalls(this)){
+                this.position.x -= 2;
+                if(Piece.checkCollisionAgainstWalls(this)){
+                    this.rotationIndex = originalRotationIndex;
+                    this.shape = this.rotations[this.rotationIndex];
+                    this.position.x++;
+                }
+            }
+
+        }        
+
         board.updateHoldingPiecePositionOnBoard(board.currentHoldingPiece.color);
-        this.calculateWidth();
+    }
+
+    static checkCollisionAgainstWalls(piece, movement){
+//fdasfdafdsaf
+        for(let i = 0; i < piece.shape.length; i++){
+            if(piece.getShapePosition(i).x < 0 || piece.getShapePosition(i).x > COLUMNS - 1){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static checkCollisionAgainstFloor(piece){
+        for(let i = 0; i < piece.shape.length; i++){
+            if(piece.getShapePosition(i).y > ROWS - 1){
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -144,8 +171,6 @@ let canvasHeight = 400;
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 
-let board = new Board(ctx, 1);
-
 let iBlock = new Piece(
     [
     [new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1), new Vector2(3, 1)],
@@ -155,38 +180,73 @@ let iBlock = new Piece(
     ],
     1
 )
-/*
+
 let jBlock = new Piece(
+    [
     [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 2), new Vector2(2, 0)],
+    [new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1), new Vector2(2, 2)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 2), new Vector2(0, 2)],
+    ],
     2
 )
+
 let lBlock = new Piece(
+    [
     [new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1), new Vector2(2, 0)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 2), new Vector2(2, 2)],
+    [new Vector2(0, 1), new Vector2(0, 2), new Vector2(1, 1), new Vector2(2, 1)],
+    [new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(1, 2)],
+    ],
     3
 )
+
 let oBlock = new Piece(
+    [
     [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+    [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+    [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+    [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0)],
+    ],
     4
 )
+
 let sBlock = new Piece(
+    [
     [new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(2, 0)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(2, 1), new Vector2(2, 2)],
+    [new Vector2(0, 2), new Vector2(1, 2), new Vector2(1, 1), new Vector2(2, 1)],
+    [new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 2)],
+    ],
     5
 )
+
 let tBlock = new Piece(
+    [
     [new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(2, 1)],
+    [new Vector2(1, 0), new Vector2(1, 1), new Vector2(2, 1), new Vector2(1, 2)],
+    [new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 2), new Vector2(2, 1)],
+    [new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), new Vector2(1, 2)],
+    ],
     6
 )
+
 let zBlock = new Piece(
+    [
     [new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(2, 1)],
+    [new Vector2(1, 1), new Vector2(1, 2), new Vector2(2, 1), new Vector2(2, 0)],
+    [new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 2), new Vector2(2, 2)],
+    [new Vector2(0, 1), new Vector2(0, 2), new Vector2(1, 1), new Vector2(1, 0)],
+    ],
     7
 )
-*/
 
-board.loadPiece(iBlock, new Vector2(5, 0));
+let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock]);
+
+board.pickNewHoldingPiece();
 
 requestAnimationFrame(draw)
 function draw(){
-
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
             board.moveCurrentHoldingPiece(new Vector2(-1, 0));
@@ -247,4 +307,8 @@ function draw(){
 
     board.draw();
     requestAnimationFrame(draw);
+}
+
+function randomInteger(max){
+    return Math.floor(Math.random() * max);
 }
