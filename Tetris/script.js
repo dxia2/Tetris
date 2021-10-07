@@ -115,10 +115,10 @@ class Board{
         || Piece.checkCollisionAgainstOtherPiecesVertically(this.currentHoldingPiece, this.grid, movement)){
             this.lockInCurrentHoldingPiece();
             this.pickNewHoldingPiece();
-            return;
+            return true;
         }
         if(Piece.checkCollisionAgainstOtherPiecesHorizontally(this.currentHoldingPiece, this.grid, movement)){
-            return;
+            return true;
         }
         // Set the piece's last position to be colorless
         this.updateHoldingPiecePositionOnBoard(0);
@@ -127,6 +127,7 @@ class Board{
             this.currentHoldingPiece.position.y += movement.y;
         }
         this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color);
+        return false;
     }
 
     updateHoldingPiecePositionOnBoard(color){
@@ -145,11 +146,54 @@ class Board{
         for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
             this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].isLocked = true;
         }
+        this.rowIsComplete();
     }
 
     // Check if a row is completed
     rowIsComplete(){
-
+        for(let y = ROWS - 1; y >= 0; y--){
+            let rowIsComplete = true;
+            for(let x = 0; x < COLUMNS; x++){
+                if(!this.grid[x][y].isLocked){
+                    rowIsComplete = false;
+                }
+            }
+            if(rowIsComplete){
+                // Clear the row if it is complete
+                for(let x = 0; x < COLUMNS; x++){
+                    this.grid[x][y].isLocked = false;
+                    this.grid[x][y].color = 0;
+                }
+                // Move everything in the grid down by one
+                for(let a = y; a >= 0; a--){
+                    for(let b = 0; b < COLUMNS; b++){
+                        if(a != 0){
+                            let color = this.grid[b][a - 1].color;
+                            let isLocked = this.grid[b][a - 1].isLocked;
+                            this.grid[b][a - 1].color = 0;
+                            this.grid[b][a - 1].isLocked = false;
+                            this.grid[b][a].isLocked = isLocked;
+                            this.grid[b][a].color = color;
+                        }else{
+                            this.grid[b][a].isLocked = false;
+                            this.grid[b][a].color = 0;
+                        }
+                    }
+                }
+                // Add score and set score text
+                score += SCOREINCREMENT;
+                scoreTextNumber.innerHTML = score;
+                y++;
+            }
+        }
+    }
+    instantDrop(){
+        let droppingBlock = true;
+        while(droppingBlock){
+            if(this.moveCurrentHoldingPiece(new Vector2(0, 1))){
+                droppingBlock = false;
+            }
+        }
     }
 }
 
@@ -358,7 +402,11 @@ let zBlock = new Piece(
 let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock]);
 let gameIsRunning = true;
 
-let scoreText = document.getElementById("scoreText");
+let score = 0;
+let scoreTextNumber = document.getElementById("scoreTextNumber");
+
+let instantDropKeyPreviouslyPressed = false;
+let instantDropKeyPressedDown = false;
 
 board.pickNewHoldingPiece();
 
@@ -419,6 +467,23 @@ function draw(){
         timeBtwRotate["e"] = 0;
     }
 
+    if(keysPressed["w"]){
+        if(instantDropKeyPreviouslyPressed){
+            if(instantDropKeyPressedDown){
+                instantDropKeyPressedDown = false;
+            }
+        }else{
+            instantDropKeyPreviouslyPressed = true;
+            instantDropKeyPressedDown = true;
+        }
+
+    }else{
+        instantDropKeyPreviouslyPressed = false;
+    }
+
+    if(instantDropKeyPressedDown){
+        board.instantDrop();
+    }
 
     board.addGravity();
 
