@@ -21,7 +21,10 @@ class Board{
     startDelayBtwPieceFall;
     delayBtwPieceFall;
     pieces;
-    constructor(ctx, startDelayBtwPieceFall, pieces){
+    holdingPiece = null;
+    playerPressHoldPiece = false;
+    startingPosition;
+    constructor(ctx, startDelayBtwPieceFall, pieces, startingPosition){
         this.ctx = ctx;
         this.grid = new Array(COLUMNS);
         for(let i = 0; i < COLUMNS; i++){
@@ -37,6 +40,7 @@ class Board{
         this.startDelayBtwPieceFall = startDelayBtwPieceFall;
         this.delayBtwPieceFall = startDelayBtwPieceFall;
         this.pieces = pieces;
+        this.startingPosition = startingPosition;
     }
 
     draw(){
@@ -78,7 +82,7 @@ class Board{
     
         }
         
-        this.loadPiece(this.pieces[randomInteger(this.pieces.length)], new Vector2(5, 0));
+        this.loadPiece(this.pieces[randomInteger(this.pieces.length)], this.startingPosition);
         let isSpawningOnOtherPieces = false;
         for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
             if(this.currentHoldingPiece.getShapePosition(i).x >= 0 
@@ -91,7 +95,7 @@ class Board{
             }
         }
         if(isSpawningOnOtherPieces){
-            document.getElementById("youLoseTest").innerHTML = "yoy lose";
+            youLoseText.innerHTML = "yoy lose";
             gameIsRunning = false;
             // // move piece up by one
             // this.moveCurrentHoldingPiece(new Vector2(0, -1));
@@ -146,6 +150,7 @@ class Board{
         for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
             this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].isLocked = true;
         }
+        this.playerPressHoldPiece = false;
         this.rowIsComplete();
     }
 
@@ -180,9 +185,11 @@ class Board{
                         }
                     }
                 }
-                // Add score and set score text
+                // Add score and set score text and play animation
                 score += SCOREINCREMENT;
                 scoreTextNumber.innerHTML = score;
+                startScoreAnimation();
+                // increment the y because we need to check the same row again after everything was moved down
                 y++;
             }
         }
@@ -194,6 +201,36 @@ class Board{
                 droppingBlock = false;
             }
         }
+    }
+    holdPiece(){
+        if(this.holdingPiece === null){
+            this.holdingPiece = this.currentHoldingPiece;
+
+            heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
+            heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
+            for(let i = 0; i < this.holdingPiece.shape.length; i++){
+                board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
+                heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE)
+            }
+    
+            this.pickNewHoldingPiece();
+        }else{
+            if(!this.playerPressHoldPiece){
+                let currentHoldingPiece = this.currentHoldingPiece;
+                this.currentHoldingPiece = this.holdingPiece;
+                this.holdingPiece = currentHoldingPiece;
+
+                heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
+                heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
+                for(let i = 0; i < this.holdingPiece.shape.length; i++){
+                    board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
+                    heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE)
+                }
+                this.playerPressHoldPiece = true;
+            }
+        }
+
+        this.holdingPiece.position = this.startingPosition;
     }
 }
 
@@ -323,11 +360,20 @@ class Piece{
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
+let heldBlockCanvas = document.getElementById("heldBlockCanvas");
+let heldBlockCtx = heldBlockCanvas.getContext("2d");
+
 let canvasWidth = 200;
 let canvasHeight = 400;
 
+let heldBlockCanvasWidth = 80;
+let heldBlockCanvasHeight = 80;
+
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
+
+heldBlockCanvas.width = heldBlockCanvasWidth;
+heldBlockCanvas.height = heldBlockCanvasHeight;
 
 let iBlock = new Piece(
     [
@@ -399,14 +445,18 @@ let zBlock = new Piece(
     7
 )
 
-let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock]);
+let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
 let gameIsRunning = true;
 
 let score = 0;
 let scoreTextNumber = document.getElementById("scoreTextNumber");
+let youLoseText = document.getElementById("youLoseText");
 
 let instantDropKeyPreviouslyPressed = false;
 let instantDropKeyPressedDown = false;
+
+let holdKeyPreviouslyPressed = false;
+let holdKeyPressedDown = false;
 
 board.pickNewHoldingPiece();
 
@@ -483,6 +533,24 @@ function draw(){
 
     if(instantDropKeyPressedDown){
         board.instantDrop();
+    }
+    // Check if press f then hold the current piece
+    if(keysPressed["f"]){
+        if(holdKeyPreviouslyPressed){
+            if(holdKeyPressedDown){
+                holdKeyPressedDown = false;
+            }
+        }else{
+            holdKeyPreviouslyPressed = true;
+            holdKeyPressedDown = true;
+        }
+
+    }else{
+        holdKeyPreviouslyPressed = false;
+    }
+
+    if(holdKeyPressedDown){
+        board.holdPiece();
     }
 
     board.addGravity();

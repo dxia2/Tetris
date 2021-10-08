@@ -5,6 +5,7 @@ let keysPressed = {
     "d": false,
     "q": false,
     "e": false,
+    "f": false,
 }
 let timeBtwMove = {
     "w": 0,

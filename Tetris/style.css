@@ -1,6 +1,22 @@
 body{
     text-align: center;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
-#canvas{
-    border: 1px solid grey;
+canvas{
+    border: 1px solid black;
+}
+#scoreText{
+    font-size: 20px;
+}
+
+.columns{
+    display:flex;
+    width: 50%;
+    margin: 50px auto;
+}
+.leftColumn{
+    flex: 50%;
+}
+.rightColumn{
+    flex: 50%;
 }
