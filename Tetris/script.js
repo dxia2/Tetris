@@ -82,7 +82,7 @@ class Board{
     
         }
         
-        this.loadPiece(this.pieces[randomInteger(this.pieces.length)], this.startingPosition);
+        this.loadPiece(nextPieces.unloadPiece(), new Vector2(this.startingPosition.x, this.startingPosition.y));
         let isSpawningOnOtherPieces = false;
         for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
             if(this.currentHoldingPiece.getShapePosition(i).x >= 0 
@@ -97,19 +97,6 @@ class Board{
         if(isSpawningOnOtherPieces){
             youLoseText.innerHTML = "yoy lose";
             gameIsRunning = false;
-            // // move piece up by one
-            // this.moveCurrentHoldingPiece(new Vector2(0, -1));
-            // for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-            //     if(this.currentHoldingPiece.getShapePosition(i).x >= 0 
-            //     && this.currentHoldingPiece.getShapePosition(i).x < COLUMNS
-            //     && this.currentHoldingPiece.getShapePosition(i).y >= 0
-            //     && this.currentHoldingPiece.getShapePosition(i).y < ROWS){
-            //         if(this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].isLocked){
-            //             // Lose
-                        
-            //         }
-            //     }
-            // }
         }
     }
 
@@ -203,6 +190,11 @@ class Board{
         }
     }
     holdPiece(){
+
+        if(this.holdingPiece === this.currentHoldingPiece){
+            return;
+        }
+
         if(this.holdingPiece === null){
             this.holdingPiece = this.currentHoldingPiece;
 
@@ -210,27 +202,87 @@ class Board{
             heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
             for(let i = 0; i < this.holdingPiece.shape.length; i++){
                 board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
-                heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE)
             }
-    
+            this.holdingPiece.rotationIndex = 0;
+            this.holdingPiece.shape = this.holdingPiece.rotations[this.holdingPiece.rotationIndex];
+            for(let i = 0; i < this.holdingPiece.shape.length; i++){
+                heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
+            }
             this.pickNewHoldingPiece();
         }else{
             if(!this.playerPressHoldPiece){
+
                 let currentHoldingPiece = this.currentHoldingPiece;
                 this.currentHoldingPiece = this.holdingPiece;
                 this.holdingPiece = currentHoldingPiece;
+
 
                 heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
                 heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
                 for(let i = 0; i < this.holdingPiece.shape.length; i++){
                     board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
-                    heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE)
+                    
+                }
+
+                this.currentHoldingPiece.rotationIndex = 0;
+                this.currentHoldingPiece.shape = this.currentHoldingPiece.rotations[this.currentHoldingPiece.rotationIndex];
+                this.currentHoldingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
+                this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color);
+
+                this.holdingPiece.rotationIndex = 0;
+                this.holdingPiece.shape = this.holdingPiece.rotations[this.holdingPiece.rotationIndex];
+                for(let i = 0; i < this.holdingPiece.shape.length; i++){
+                    heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
                 }
                 this.playerPressHoldPiece = true;
             }
         }
 
-        this.holdingPiece.position = this.startingPosition;
+        this.holdingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
+    }
+}
+
+class NextPieces{
+    nextPiecesCanvas;
+    nextPiecesCtx;
+
+    pieces;
+    nextPieces;
+    constructor(nextPiecesCanvasId, pieces, canvasWidth, canvasHeight){
+        this.nextPiecesCanvas = document.getElementById(nextPiecesCanvasId);
+        this.nextPiecesCtx = this.nextPiecesCanvas.getContext("2d");
+
+        this.nextPiecesCanvas.width = canvasWidth;
+        this.nextPiecesCanvas.height = canvasHeight;
+
+        this.pieces = pieces;
+        this.initialize();
+    }
+
+    initialize(){
+        this.nextPieces = [this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)]];
+        this.updateCanvas();
+    }
+
+    updateCanvas(){
+        this.nextPiecesCtx.clearRect(0, 0, this.nextPiecesCanvas.width, this.nextPiecesCanvas.height);
+        for(let i = 0; i < this.nextPieces.length; i++){
+            this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1];
+            let yOffset = i * PIECESMAXSIZE;
+            for(let a = 0; a < this.nextPieces[i].shape.length; a++){
+                this.nextPiecesCtx.fillRect(this.nextPieces[i].shape[a].x * BLOCKSIZE,
+                    (this.nextPieces[i].shape[a].y + yOffset) * BLOCKSIZE, 
+                    BLOCKSIZE, BLOCKSIZE
+                    );
+            }
+        }
+    }
+    // returns the first piece in the nextPieces array and picks a new piece for the end of the array
+    unloadPiece(){
+        let unloadedPiece = this.nextPieces.shift();
+        this.nextPieces.push(this.pieces[randomInteger(this.pieces.length)]);
+        this.updateCanvas();
+        return unloadedPiece;
     }
 }
 
@@ -445,6 +497,7 @@ let zBlock = new Piece(
     7
 )
 
+let nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
 let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
 let gameIsRunning = true;
 

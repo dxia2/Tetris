@@ -15,8 +15,8 @@ canvas{
     margin: 50px auto;
 }
 .leftColumn{
-    flex: 50%;
+    flex: 25%;
 }
 .rightColumn{
-    flex: 50%;
+    flex: 75%;
 }
