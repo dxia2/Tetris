@@ -172,10 +172,7 @@ class Board{
                         }
                     }
                 }
-                // Add score and set score text and play animation
-                score += SCOREINCREMENT;
-                scoreTextNumber.innerHTML = score;
-                startScoreAnimation();
+                Score.addScore(this);
                 // increment the y because we need to check the same row again after everything was moved down
                 y++;
             }
@@ -409,6 +406,33 @@ class Piece{
     }
 }
 
+class Score{
+    static level = 1;
+    static score = 0;
+    static nextLevelUpThreshold = SCORELEVELINCREMENT;
+    static levelTextNumber = document.getElementById("levelTextNumber");
+    static scoreTextNumber = document.getElementById("scoreTextNumber");
+
+    static addScore(board){
+        startTextAnimation(scoreText);
+        this.score += this.level * SCORELEVELMULTIPLIER;
+        if(this.score >= this.nextLevelUpThreshold){
+            this.level++;
+            startTextAnimation(levelText)
+            this.levelTextNumber.innerHTML = this.level;
+            this.nextLevelUpThreshold *= 2;
+            this.nextLevelUpThreshold += SCORELEVELINCREMENT;
+        }
+        this.scoreTextNumber.innerHTML = this.score;
+
+        board.startDelayBtwPieceFall = STARTPIECEDROPDELAY - (this.level - 1) * DROPSPEEDINCREASEPERLEVEL;
+        if(board.startDelayBtwPieceFall < MINDROPSPEED){
+            board.startDelayBtwPieceFall = MINDROPSPEED;
+        }
+        console.log(board.startDelayBtwPieceFall);
+    }
+}
+
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
@@ -498,11 +522,9 @@ let zBlock = new Piece(
 )
 
 let nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
-let board = new Board(ctx, 1, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
+let board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
 let gameIsRunning = true;
 
-let score = 0;
-let scoreTextNumber = document.getElementById("scoreTextNumber");
 let youLoseText = document.getElementById("youLoseText");
 
 let instantDropKeyPreviouslyPressed = false;
@@ -605,6 +627,7 @@ function draw(){
     if(holdKeyPressedDown){
         board.holdPiece();
     }
+    
 
     board.addGravity();
 

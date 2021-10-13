@@ -4,12 +4,17 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
         <title>Tetris</title>
+        <link
+        href="https://fonts.googleapis.com/css?family=Press+Start+2P"
+        rel="stylesheet"
+        />
         <link href="style.css" rel="stylesheet" type="text/css" />
     </head>
     <body>
         <div class="columns">
             <div class="leftColumn">
-                <p id="scoreText">Score: <span id="scoreTextNumber">0</span></p>
+                <p id="scoreText" class="playerStats">Score: <span id="scoreTextNumber">0</span></p>
+                <p id="levelText" class="playerStats">Level: <span id="levelTextNumber">1</span></p>
                 <p>Hold</p>
                 <canvas id="heldBlockCanvas"></canvas>
                 <p>Next</p>
@@ -24,7 +29,9 @@
             </div>
         </div>
 
-
+        <div class="startGamePanel">
+            <h1 class="startGameHeader">START GAME</h1>
+        </div>
 
         <script src="input.js"></script>
         <script src="time.js"></script>
