@@ -535,7 +535,7 @@ let holdKeyPressedDown = false;
 
 board.pickNewHoldingPiece();
 
-requestAnimationFrame(draw)
+//requestAnimationFrame(draw);
 function draw(){
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
