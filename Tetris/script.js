@@ -1,11 +1,4 @@
-class Vector2{
-    x;
-    y;
-    constructor(x, y){
-        this.x = x;
-        this.y = y;
-    }
-}
+
 class GridPiece{
     isLocked;
     color;
@@ -94,9 +87,9 @@ class Board{
                 }
             }
         }
+        // If player loses
         if(isSpawningOnOtherPieces){
-            youLoseText.innerHTML = "yoy lose";
-            gameIsRunning = false;
+            this.playerLose();
         }
     }
 
@@ -140,7 +133,6 @@ class Board{
         this.playerPressHoldPiece = false;
         this.rowIsComplete();
     }
-
     // Check if a row is completed
     rowIsComplete(){
         for(let y = ROWS - 1; y >= 0; y--){
@@ -178,6 +170,7 @@ class Board{
             }
         }
     }
+
     instantDrop(){
         let droppingBlock = true;
         while(droppingBlock){
@@ -186,6 +179,7 @@ class Board{
             }
         }
     }
+
     holdPiece(){
 
         if(this.holdingPiece === this.currentHoldingPiece){
@@ -236,6 +230,12 @@ class Board{
         }
 
         this.holdingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
+    }
+
+    playerLose(){
+        youLoseText.innerHTML = "yoy lose";
+        gameIsRunning = false;
+        gameEndUI();
     }
 }
 
@@ -535,7 +535,6 @@ let holdKeyPressedDown = false;
 
 board.pickNewHoldingPiece();
 
-//requestAnimationFrame(draw);
 function draw(){
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
