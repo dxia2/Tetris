@@ -89,7 +89,7 @@ class Board{
         }
         // If player loses
         if(isSpawningOnOtherPieces){
-            this.playerLose();
+            playerLose();
         }
     }
 
@@ -231,12 +231,6 @@ class Board{
 
         this.holdingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
     }
-
-    playerLose(){
-        youLoseText.innerHTML = "yoy lose";
-        gameIsRunning = false;
-        gameEndUI();
-    }
 }
 
 class NextPieces{
@@ -253,12 +247,13 @@ class NextPieces{
         this.nextPiecesCanvas.height = canvasHeight;
 
         this.pieces = pieces;
+
         this.initialize();
     }
 
     initialize(){
         this.nextPieces = [this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)]];
-        this.updateCanvas();
+        // this.updateCanvas();
     }
 
     updateCanvas(){
@@ -429,7 +424,14 @@ class Score{
         if(board.startDelayBtwPieceFall < MINDROPSPEED){
             board.startDelayBtwPieceFall = MINDROPSPEED;
         }
-        console.log(board.startDelayBtwPieceFall);
+    }
+
+    static reset(){
+        this.level = 0;
+        this.levelTextNumber.innerHTML = 0;
+        this.score = 0;
+        this.scoreTextNumber.innerHTML = 0;
+        this.nextLevelUpThreshold = SCORELEVELINCREMENT;
     }
 }
 
@@ -521,19 +523,20 @@ let zBlock = new Piece(
     7
 )
 
-let nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
-let board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
-let gameIsRunning = true;
+let pieceStartPositionOffset = new Vector2(4, 0);
 
-let youLoseText = document.getElementById("youLoseText");
+let nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
+let board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], pieceStartPositionOffset);
+
+gameStartUI();
+
+let gameIsRunning = true;
 
 let instantDropKeyPreviouslyPressed = false;
 let instantDropKeyPressedDown = false;
 
 let holdKeyPreviouslyPressed = false;
 let holdKeyPressedDown = false;
-
-board.pickNewHoldingPiece();
 
 function draw(){
     if(keysPressed["a"]){
@@ -630,12 +633,32 @@ function draw(){
 
     board.addGravity();
 
-    board.draw();
     if(gameIsRunning){
+        board.draw();
         requestAnimationFrame(draw);
     }
 }
 
 function randomInteger(max){
     return Math.floor(Math.random() * max);
+}
+
+function playerLose(){
+    gameIsRunning = false;
+    gameEndUI();
+}
+
+function resetGame(){
+    nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
+
+    board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
+    Score.reset();
+    heldBlockCtx.clearRect(0, 0, heldBlockCanvas.width, heldBlockCanvas.height);
+    instantDropKeyPreviouslyPressed = false;
+    instantDropKeyPressedDown = false;
+    holdKeyPreviouslyPressed = false;
+    holdKeyPressedDown = false;
+    gameIsRunning = true;
+    board.pickNewHoldingPiece();
+    requestAnimationFrame(draw);
 }

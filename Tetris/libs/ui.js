@@ -7,9 +7,9 @@ class UiButton{
     outlineWidth;
     clickAction;
     uiText;
-    isActive = true;
+    isActive;
     static uiButtons = [];
-    constructor(position, width, height, color, outlineWidth, uiText, clickAction){
+    constructor(position, width, height, color, outlineWidth, uiText, isActive, clickAction){
         this.position = position;
         this.width = width;
         this.height = height;
@@ -18,6 +18,7 @@ class UiButton{
         this.clickAction = clickAction;
         this.uiText = uiText;
         this.uiText.position = new Vector2(this.uiText.position.x + this.position.x + this.width / 2, this.uiText.position.y + this.position.y + this.height / 2);
+        this.isActive = isActive;
         UiButton.uiButtons.push(this);
     }
 
@@ -53,7 +54,12 @@ class UiText{
     drawUi(context){
         context.font = this.font;
         context.fillStyle = this.color;
-        context.textAlign = "center";
+        if(this.centered){
+            context.textAlign = "center";
+        }else{
+            context.textAlign = "left";
+        }
+
         context.textBaseline = "middle";
         context.fillText(this.text, this.position.x, this.position.y);
     }
