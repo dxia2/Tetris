@@ -14,8 +14,11 @@
     <div class="columns">
         <!-- left column which contains information such as the score, level, and pieces that are going to come next -->
         <div class="leftColumn">
-            <p id="scoreText" class="playerStats">Score: <span id="scoreTextNumber">0</span></p>
-            <p id="levelText" class="playerStats">Level: <span id="levelTextNumber">1</span></p>
+            <div class="playerStats">
+                <p id="scoreText">Score: <span id="scoreTextNumber">0</span></p>
+                <p id="levelText">Level: <span id="levelTextNumber">1</span></p>
+            </div>
+           
             <p>Hold</p>
             <canvas id="heldBlockCanvas"></canvas>
             <p>Next</p>
@@ -40,6 +43,7 @@
         press "F" again to access held piece
     </p>
     <!-- load libraries -->
+    <script src="libs/colors.js"></script>
     <script src="libs/transforms.js"></script>
     <script src="libs/ui.js"></script>
 

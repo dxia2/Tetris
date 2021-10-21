@@ -2,6 +2,9 @@
     font-family: "PressStart2P";
     src: url("fonts/Press_Start_2P/PressStart2P.ttf");
 }
+html{
+    /* background-image: url("img/background2.png"); */
+}
 body{
     text-align: center;
     /* font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; */
@@ -13,6 +16,23 @@ canvas{
 .playerStats{
     font-size: 16px;
     white-space: nowrap;
+    position:relative;
+    height: 50px;
+    width: 100px;
+    margin: auto;
+    /* border: 1px solid black; */
+}
+#levelText{
+    position:absolute;
+    top:-25%; 
+    left:50%; 
+    transform:translate(-50%, 0%); 
+}
+#scoreText{
+    position: absolute;
+    top:50%; 
+    left:50%; 
+    transform:translate(-50%, -50%); 
 }
 
 .columns{

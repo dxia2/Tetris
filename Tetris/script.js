@@ -10,7 +10,7 @@ class GridPiece{
 class Board{
     ctx;
     grid;
-    currentHoldingPiece;
+    activePiece;
     startDelayBtwPieceFall;
     delayBtwPieceFall;
     pieces;
@@ -41,17 +41,22 @@ class Board{
         for(let a = 0; a < COLUMNS; a++){
             for(let b = 0; b < ROWS; b++){
                 if(this.grid[a][b].color != 0){
-                    ctx.fillStyle = COLORS[this.grid[a][b].color - 1];
-                    let x = (a * BLOCKSIZE)
-                    let y = (b * BLOCKSIZE)
+                    ctx.fillStyle = COLORS[this.grid[a][b].color - 1].returnRGB();
+                    let x = (a * BLOCKSIZE);
+                    let y = (b * BLOCKSIZE);
                     ctx.fillRect(x, y, BLOCKSIZE, BLOCKSIZE);
+                    darkerColor = getDarkerColor(COLORS[this.grid[a][b].color - 1]);
+                    ctx.fillStyle = darkerColor.returnRGB();
+                    x = (a * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                    y = (b * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                    ctx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
                 }
             }
         }
     }
     loadPiece(piece, position){
-        this.currentHoldingPiece = piece;
-        this.currentHoldingPiece.position = position;
+        this.activePiece = piece;
+        this.activePiece.position = position;
         for(let i = 0; i < piece.shape.length; i++){
             this.grid[piece.getShapePosition(i).x][piece.getShapePosition(i).y].color = piece.color;
         }
@@ -69,20 +74,20 @@ class Board{
     }
 
     pickNewHoldingPiece(){
-        if(this.currentHoldingPiece != null){
-            this.currentHoldingPiece.rotationIndex = 0;
-            this.currentHoldingPiece.shape = this.currentHoldingPiece.rotations[this.currentHoldingPiece.rotationIndex];
+        if(this.activePiece != null){
+            this.activePiece.rotationIndex = 0;
+            this.activePiece.shape = this.activePiece.rotations[this.activePiece.rotationIndex];
     
         }
         
         this.loadPiece(nextPieces.unloadPiece(), new Vector2(this.startingPosition.x, this.startingPosition.y));
         let isSpawningOnOtherPieces = false;
-        for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-            if(this.currentHoldingPiece.getShapePosition(i).x >= 0 
-            && this.currentHoldingPiece.getShapePosition(i).x < COLUMNS
-            && this.currentHoldingPiece.getShapePosition(i).y >= 0
-            && this.currentHoldingPiece.getShapePosition(i).y < ROWS){
-                if(this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].isLocked){
+        for(let i = 0; i < this.activePiece.shape.length; i++){
+            if(this.activePiece.getShapePosition(i).x >= 0 
+            && this.activePiece.getShapePosition(i).x < COLUMNS
+            && this.activePiece.getShapePosition(i).y >= 0
+            && this.activePiece.getShapePosition(i).y < ROWS){
+                if(this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked){
                     isSpawningOnOtherPieces = true;
                 }
             }
@@ -95,40 +100,40 @@ class Board{
 
     moveCurrentHoldingPiece(movement){
         // Check if it hits the floor
-        if(Piece.checkCollisionAgainstFloor(this.currentHoldingPiece, movement)
-        || Piece.checkCollisionAgainstOtherPiecesVertically(this.currentHoldingPiece, this.grid, movement)){
+        if(Piece.checkCollisionAgainstFloor(this.activePiece, movement)
+        || Piece.checkCollisionAgainstOtherPiecesVertically(this.activePiece, this.grid, movement)){
             this.lockInCurrentHoldingPiece();
             this.pickNewHoldingPiece();
             return true;
         }
-        if(Piece.checkCollisionAgainstOtherPiecesHorizontally(this.currentHoldingPiece, this.grid, movement)){
+        if(Piece.checkCollisionAgainstOtherPiecesHorizontally(this.activePiece, this.grid, movement)){
             return true;
         }
         // Set the piece's last position to be colorless
         this.updateHoldingPiecePositionOnBoard(0);
-        if(!Piece.checkCollisionAgainstWalls(this.currentHoldingPiece, movement)){
-            this.currentHoldingPiece.position.x += movement.x;
-            this.currentHoldingPiece.position.y += movement.y;
+        if(!Piece.checkCollisionAgainstWalls(this.activePiece, movement)){
+            this.activePiece.position.x += movement.x;
+            this.activePiece.position.y += movement.y;
         }
-        this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color);
+        this.updateHoldingPiecePositionOnBoard(this.activePiece.color);
         return false;
     }
 
     updateHoldingPiecePositionOnBoard(color){
-        for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-            if(this.currentHoldingPiece.getShapePosition(i).x >= 0 
-            && this.currentHoldingPiece.getShapePosition(i).x < COLUMNS
-            && this.currentHoldingPiece.getShapePosition(i).y >= 0
-            && this.currentHoldingPiece.getShapePosition(i).y < ROWS){
-                this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].color = color;
+        for(let i = 0; i < this.activePiece.shape.length; i++){
+            if(this.activePiece.getShapePosition(i).x >= 0 
+            && this.activePiece.getShapePosition(i).x < COLUMNS
+            && this.activePiece.getShapePosition(i).y >= 0
+            && this.activePiece.getShapePosition(i).y < ROWS){
+                this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].color = color;
             }
             
         }
     }
 
     lockInCurrentHoldingPiece(){
-        for(let i = 0; i < this.currentHoldingPiece.shape.length; i++){
-            this.grid[this.currentHoldingPiece.getShapePosition(i).x][this.currentHoldingPiece.getShapePosition(i).y].isLocked = true;
+        for(let i = 0; i < this.activePiece.shape.length; i++){
+            this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked = true;
         }
         this.playerPressHoldPiece = false;
         this.rowIsComplete();
@@ -182,15 +187,15 @@ class Board{
 
     holdPiece(){
 
-        if(this.holdingPiece === this.currentHoldingPiece){
+        if(this.holdingPiece === this.activePiece){
             return;
         }
 
         if(this.holdingPiece === null){
-            this.holdingPiece = this.currentHoldingPiece;
+            this.holdingPiece = this.activePiece;
 
             heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
-            heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
+            heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
             for(let i = 0; i < this.holdingPiece.shape.length; i++){
                 board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
             }
@@ -203,22 +208,22 @@ class Board{
         }else{
             if(!this.playerPressHoldPiece){
 
-                let currentHoldingPiece = this.currentHoldingPiece;
-                this.currentHoldingPiece = this.holdingPiece;
-                this.holdingPiece = currentHoldingPiece;
+                let activePiece = this.activePiece;
+                this.activePiece = this.holdingPiece;
+                this.holdingPiece = activePiece;
 
 
                 heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
-                heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1];
+                heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
                 for(let i = 0; i < this.holdingPiece.shape.length; i++){
                     board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
                     
                 }
 
-                this.currentHoldingPiece.rotationIndex = 0;
-                this.currentHoldingPiece.shape = this.currentHoldingPiece.rotations[this.currentHoldingPiece.rotationIndex];
-                this.currentHoldingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
-                this.updateHoldingPiecePositionOnBoard(this.currentHoldingPiece.color);
+                this.activePiece.rotationIndex = 0;
+                this.activePiece.shape = this.activePiece.rotations[this.activePiece.rotationIndex];
+                this.activePiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
+                this.updateHoldingPiecePositionOnBoard(this.activePiece.color);
 
                 this.holdingPiece.rotationIndex = 0;
                 this.holdingPiece.shape = this.holdingPiece.rotations[this.holdingPiece.rotationIndex];
@@ -259,13 +264,19 @@ class NextPieces{
     updateCanvas(){
         this.nextPiecesCtx.clearRect(0, 0, this.nextPiecesCanvas.width, this.nextPiecesCanvas.height);
         for(let i = 0; i < this.nextPieces.length; i++){
-            this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1];
+            this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1].returnRGB();
             let yOffset = i * PIECESMAXSIZE;
             for(let a = 0; a < this.nextPieces[i].shape.length; a++){
                 this.nextPiecesCtx.fillRect(this.nextPieces[i].shape[a].x * BLOCKSIZE,
                     (this.nextPieces[i].shape[a].y + yOffset) * BLOCKSIZE, 
                     BLOCKSIZE, BLOCKSIZE
-                    );
+                );
+                
+                darkerColor = getDarkerColor(this.nextpieces[i].color);
+                ctx.fillStyle = darkerColor.returnRGB();
+                let x = (a * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                let y = (b * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                ctx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
             }
         }
     }
@@ -328,7 +339,7 @@ class Piece{
 
         }        
         // Redraw the piece on the board
-        board.updateHoldingPiecePositionOnBoard(board.currentHoldingPiece.color);
+        board.updateHoldingPiecePositionOnBoard(board.activePiece.color);
     }
 
     static checkCollisionAgainstWalls(piece, movement){
@@ -574,7 +585,7 @@ function draw(){
 
     if(keysPressed["q"]){
         if(timeBtwRotate["q"] <= 0){
-            board.currentHoldingPiece.rotate(false);
+            board.activePiece.rotate(false);
             timeBtwRotate["q"] = startTimeBtwRotate;
         }else{
             timeBtwRotate["q"] -= deltaTime;
@@ -585,7 +596,7 @@ function draw(){
 
     if(keysPressed["e"]){
         if(timeBtwRotate["e"] <= 0){
-            board.currentHoldingPiece.rotate(true);
+            board.activePiece.rotate(true);
             timeBtwRotate["e"] = startTimeBtwRotate;
         }else{
             timeBtwRotate["e"] -= deltaTime;
@@ -661,4 +672,16 @@ function resetGame(){
     gameIsRunning = true;
     board.pickNewHoldingPiece();
     requestAnimationFrame(draw);
+}
+
+function getDarkerColor(color){
+    // Draw a smaller darker square inside
+    let darkerColor = new Color(color.r, 
+        color.g,
+        color.b
+    );
+    darkerColor.r *= 0.85;
+    darkerColor.g *= 0.85;
+    darkerColor.b *= 0.85;
+    return darkerColor;
 }
