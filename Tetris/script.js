@@ -1,5 +1,8 @@
+// Main script for tetris game
 
-class GridPiece{
+// A class that stores information for every tile on the board grid
+class GridTile{
+    // Stores a color and if the tile is locked in place(it's not part of the piece that the player is controlling)
     isLocked;
     color;
     constructor(isLocked, color){
@@ -7,6 +10,7 @@ class GridPiece{
         this.color = color;
     }
 }
+// Class that stores information about the board the tetris pieces are on
 class Board{
     ctx;
     grid;
@@ -19,6 +23,7 @@ class Board{
     startingPosition;
     constructor(ctx, startDelayBtwPieceFall, pieces, startingPosition){
         this.ctx = ctx;
+        // The grid is made up of 2 arrays of "GridTiles", which makes a 2d table
         this.grid = new Array(COLUMNS);
         for(let i = 0; i < COLUMNS; i++){
             this.grid[i] = new Array(ROWS);
@@ -26,100 +31,114 @@ class Board{
 
         for(let x = 0; x < COLUMNS; x++){
             for(let y = 0; y < ROWS; y++){
-                this.grid[x][y] = new GridPiece(false, 0);
+                this.grid[x][y] = new GridTile(false, 0);
             }
         }
-
+        // Set the rest of the varibles
         this.startDelayBtwPieceFall = startDelayBtwPieceFall;
         this.delayBtwPieceFall = startDelayBtwPieceFall;
         this.pieces = pieces;
         this.startingPosition = startingPosition;
     }
-
+    // Function which draws onto the canvas based on what is in the grid
     draw(){
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        this.ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        // Loop through all the elements in the grid array
+        // a represents the x value of the table, b represents the y value of the table
         for(let a = 0; a < COLUMNS; a++){
             for(let b = 0; b < ROWS; b++){
+                // Color 0 represents an empty square, so if it is 0 we don't draw anything
                 if(this.grid[a][b].color != 0){
-                    ctx.fillStyle = COLORS[this.grid[a][b].color - 1].returnRGB();
+                    // Set the fillstyle of the context based on the color of the element in the grid
+                    this.ctx.fillStyle = COLORS[this.grid[a][b].color - 1].returnRGB();
+                    // calculate the position of the square on the canvas
                     let x = (a * BLOCKSIZE);
                     let y = (b * BLOCKSIZE);
-                    ctx.fillRect(x, y, BLOCKSIZE, BLOCKSIZE);
-                    darkerColor = getDarkerColor(COLORS[this.grid[a][b].color - 1]);
-                    ctx.fillStyle = darkerColor.returnRGB();
+                    // fill in the square 
+                    this.ctx.fillRect(x, y, BLOCKSIZE, BLOCKSIZE);
+
+                    // Draw darker square inside to make it easier to see individual squares
+                    let darkerColor = getDarkerColor(COLORS[this.grid[a][b].color - 1]);
+                    this.ctx.fillStyle = darkerColor.returnRGB();
+                    // Calculate the correct position inside the canvas
                     x = (a * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
                     y = (b * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
-                    ctx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
+                    this.ctx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
                 }
             }
         }
     }
+    // Load a new Piece onto the board (usually done after the player places a piece)
     loadPiece(piece, position){
         this.activePiece = piece;
         this.activePiece.position = position;
+        // Loop through all the parts of the shape of the piece, and set the position on the board to be the correct color
         for(let i = 0; i < piece.shape.length; i++){
             this.grid[piece.getShapePosition(i).x][piece.getShapePosition(i).y].color = piece.color;
         }
     }
-
+    // Simulates the pieces falling down
     addGravity(){
+        // a timer that activates every x amount of seconds
         if(this.delayBtwPieceFall <= 0){
-            // GRAVITY
-            this.moveCurrentHoldingPiece(new Vector2(0, 1));
+            // move the active piece down by one on the grid
+            this.moveActivePiece(new Vector2(0, 1));
 
             this.delayBtwPieceFall = this.startDelayBtwPieceFall;
         }else{
             this.delayBtwPieceFall -= deltaTime;
         }
     }
-
-    pickNewHoldingPiece(){
+    // Function that picks a new active piece
+    pickNewActivePiece(){
+        // Reset the active piece's rotation because all the active pieces come from the same 7 pieces (not clones)
+        // if we don't reset the rotation, the next time this piece comes into play it will have the same rotation
         if(this.activePiece != null){
             this.activePiece.rotationIndex = 0;
             this.activePiece.shape = this.activePiece.rotations[this.activePiece.rotationIndex];
-    
         }
-        
+        // Load a new piece based on what is next in the "nextPieces" class
         this.loadPiece(nextPieces.unloadPiece(), new Vector2(this.startingPosition.x, this.startingPosition.y));
         let isSpawningOnOtherPieces = false;
+        // Check if the new piece is spawning on existing pieces, if so, the player loses
         for(let i = 0; i < this.activePiece.shape.length; i++){
-            if(this.activePiece.getShapePosition(i).x >= 0 
-            && this.activePiece.getShapePosition(i).x < COLUMNS
-            && this.activePiece.getShapePosition(i).y >= 0
-            && this.activePiece.getShapePosition(i).y < ROWS){
-                if(this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked){
-                    isSpawningOnOtherPieces = true;
-                }
+            if(this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked){
+                isSpawningOnOtherPieces = true;
             }
         }
-        // If player loses
+        // Call playerLose function
         if(isSpawningOnOtherPieces){
             playerLose();
         }
     }
-
-    moveCurrentHoldingPiece(movement){
-        // Check if it hits the floor
+    // a function that is used to move the active piece
+    moveActivePiece(movement){ 
+        // Check if it hits the floor or if it collides with other tiles vertically
         if(Piece.checkCollisionAgainstFloor(this.activePiece, movement)
         || Piece.checkCollisionAgainstOtherPiecesVertically(this.activePiece, this.grid, movement)){
-            this.lockInCurrentHoldingPiece();
-            this.pickNewHoldingPiece();
+            // if so, pick a new active piece
+            this.lockInActivePiece();
+            this.pickNewActivePiece();
             return true;
         }
+        // if it hits another tile horizontally, simply stop it from moving into that tile
         if(Piece.checkCollisionAgainstOtherPiecesHorizontally(this.activePiece, this.grid, movement)){
             return true;
         }
         // Set the piece's last position to be colorless
-        this.updateHoldingPiecePositionOnBoard(0);
+        this.updateActivePiecePositionOnBoard(0);
+        // Check if the active piece collides with the edges of the canvas
         if(!Piece.checkCollisionAgainstWalls(this.activePiece, movement)){
+            // If it doesn't, apply movement
             this.activePiece.position.x += movement.x;
             this.activePiece.position.y += movement.y;
         }
-        this.updateHoldingPiecePositionOnBoard(this.activePiece.color);
+
+        this.updateActivePiecePositionOnBoard(this.activePiece.color);
         return false;
     }
-
-    updateHoldingPiecePositionOnBoard(color){
+    // Function that sets the active piece's position on the grid to be a certain color
+    updateActivePiecePositionOnBoard(color){
         for(let i = 0; i < this.activePiece.shape.length; i++){
             if(this.activePiece.getShapePosition(i).x >= 0 
             && this.activePiece.getShapePosition(i).x < COLUMNS
@@ -131,7 +150,7 @@ class Board{
         }
     }
 
-    lockInCurrentHoldingPiece(){
+    lockInActivePiece(){
         for(let i = 0; i < this.activePiece.shape.length; i++){
             this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked = true;
         }
@@ -179,7 +198,7 @@ class Board{
     instantDrop(){
         let droppingBlock = true;
         while(droppingBlock){
-            if(this.moveCurrentHoldingPiece(new Vector2(0, 1))){
+            if(this.moveActivePiece(new Vector2(0, 1))){
                 droppingBlock = false;
             }
         }
@@ -194,17 +213,15 @@ class Board{
         if(this.holdingPiece === null){
             this.holdingPiece = this.activePiece;
 
-            heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
-            heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+            heldPieceCtx.clearRect(0, 0, heldPieceCanvasWidth, heldPieceCanvasHeight);
+            // heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
             for(let i = 0; i < this.holdingPiece.shape.length; i++){
                 board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
             }
             this.holdingPiece.rotationIndex = 0;
             this.holdingPiece.shape = this.holdingPiece.rotations[this.holdingPiece.rotationIndex];
-            for(let i = 0; i < this.holdingPiece.shape.length; i++){
-                heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
-            }
-            this.pickNewHoldingPiece();
+
+            this.pickNewActivePiece();
         }else{
             if(!this.playerPressHoldPiece){
 
@@ -213,8 +230,8 @@ class Board{
                 this.holdingPiece = activePiece;
 
 
-                heldBlockCtx.clearRect(0, 0, heldBlockCanvasWidth, heldBlockCanvasHeight);
-                heldBlockCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+                heldPieceCtx.clearRect(0, 0, heldPieceCanvasWidth, heldPieceCanvasHeight);
+                // heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
                 for(let i = 0; i < this.holdingPiece.shape.length; i++){
                     board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
                     
@@ -223,20 +240,31 @@ class Board{
                 this.activePiece.rotationIndex = 0;
                 this.activePiece.shape = this.activePiece.rotations[this.activePiece.rotationIndex];
                 this.activePiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
-                this.updateHoldingPiecePositionOnBoard(this.activePiece.color);
+                this.updateActivePiecePositionOnBoard(this.activePiece.color);
 
                 this.holdingPiece.rotationIndex = 0;
                 this.holdingPiece.shape = this.holdingPiece.rotations[this.holdingPiece.rotationIndex];
-                for(let i = 0; i < this.holdingPiece.shape.length; i++){
-                    heldBlockCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
-                }
+
                 this.playerPressHoldPiece = true;
             }
+        }
+
+        for(let i = 0; i < this.holdingPiece.shape.length; i++){
+            heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+            heldPieceCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
+        
+            let darkerColor = getDarkerColor(COLORS[this.holdingPiece.color - 1]);
+
+            heldPieceCtx.fillStyle = darkerColor.returnRGB();
+            let x = (this.holdingPiece.shape[i].x * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+            let y = (this.holdingPiece.shape[i].y * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+            heldPieceCtx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
         }
 
         this.holdingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
     }
 }
+
 
 class NextPieces{
     nextPiecesCanvas;
@@ -258,25 +286,26 @@ class NextPieces{
 
     initialize(){
         this.nextPieces = [this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)]];
-        // this.updateCanvas();
     }
 
     updateCanvas(){
         this.nextPiecesCtx.clearRect(0, 0, this.nextPiecesCanvas.width, this.nextPiecesCanvas.height);
         for(let i = 0; i < this.nextPieces.length; i++){
-            this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1].returnRGB();
             let yOffset = i * PIECESMAXSIZE;
             for(let a = 0; a < this.nextPieces[i].shape.length; a++){
+
+                this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1].returnRGB();
                 this.nextPiecesCtx.fillRect(this.nextPieces[i].shape[a].x * BLOCKSIZE,
                     (this.nextPieces[i].shape[a].y + yOffset) * BLOCKSIZE, 
                     BLOCKSIZE, BLOCKSIZE
                 );
                 
-                darkerColor = getDarkerColor(this.nextpieces[i].color);
-                ctx.fillStyle = darkerColor.returnRGB();
-                let x = (a * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
-                let y = (b * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
-                ctx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
+                let darkerColor = getDarkerColor(COLORS[this.nextPieces[i].color - 1]);
+
+                this.nextPiecesCtx.fillStyle = darkerColor.returnRGB();
+                let x = (this.nextPieces[i].shape[a].x * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                let y = ((this.nextPieces[i].shape[a].y + yOffset) * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
+                this.nextPiecesCtx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
             }
         }
     }
@@ -322,7 +351,7 @@ class Piece{
             }
         }
         // Clear the area where the piece used to be on the board
-        board.updateHoldingPiecePositionOnBoard(0);
+        board.updateActivePiecePositionOnBoard(0);
         this.shape = this.rotations[this.rotationIndex];
 
         // Move the piece one block left and right to check if it still goes out of bounds or collides with other pieces
@@ -339,7 +368,7 @@ class Piece{
 
         }        
         // Redraw the piece on the board
-        board.updateHoldingPiecePositionOnBoard(board.activePiece.color);
+        board.updateActivePiecePositionOnBoard(board.activePiece.color);
     }
 
     static checkCollisionAgainstWalls(piece, movement){
@@ -420,8 +449,10 @@ class Score{
     static scoreTextNumber = document.getElementById("scoreTextNumber");
 
     static addScore(board){
+
         startTextAnimation(scoreText);
         this.score += this.level * SCORELEVELMULTIPLIER;
+        console.log(this.score);
         if(this.score >= this.nextLevelUpThreshold){
             this.level++;
             startTextAnimation(levelText)
@@ -438,10 +469,10 @@ class Score{
     }
 
     static reset(){
-        this.level = 0;
-        this.levelTextNumber.innerHTML = 0;
+        this.level = 1;
+        this.levelTextNumber.innerHTML = this.level;
         this.score = 0;
-        this.scoreTextNumber.innerHTML = 0;
+        this.scoreTextNumber.innerHTML = this.score;
         this.nextLevelUpThreshold = SCORELEVELINCREMENT;
     }
 }
@@ -449,20 +480,20 @@ class Score{
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
-let heldBlockCanvas = document.getElementById("heldBlockCanvas");
-let heldBlockCtx = heldBlockCanvas.getContext("2d");
+let heldPieceCanvas = document.getElementById("heldPieceCanvas");
+let heldPieceCtx = heldPieceCanvas.getContext("2d");
 
 let canvasWidth = 200;
 let canvasHeight = 400;
 
-let heldBlockCanvasWidth = 80;
-let heldBlockCanvasHeight = 80;
+let heldPieceCanvasWidth = 80;
+let heldPieceCanvasHeight = 80;
 
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 
-heldBlockCanvas.width = heldBlockCanvasWidth;
-heldBlockCanvas.height = heldBlockCanvasHeight;
+heldPieceCanvas.width = heldPieceCanvasWidth;
+heldPieceCanvas.height = heldPieceCanvasHeight;
 
 let iBlock = new Piece(
     [
@@ -552,7 +583,7 @@ let holdKeyPressedDown = false;
 function draw(){
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
-            board.moveCurrentHoldingPiece(new Vector2(-1, 0));
+            board.moveActivePiece(new Vector2(-1, 0));
             timeBtwMove["a"] = startTimeBtwMovePiece;
         }else{
             timeBtwMove["a"] -= deltaTime;
@@ -563,7 +594,7 @@ function draw(){
 
     if(keysPressed["d"]){
         if(timeBtwMove["d"] <= 0){
-            board.moveCurrentHoldingPiece(new Vector2(1, 0));
+            board.moveActivePiece(new Vector2(1, 0));
             timeBtwMove["d"] = startTimeBtwMovePiece;
         }else{
             timeBtwMove["d"] -= deltaTime;
@@ -574,7 +605,7 @@ function draw(){
 
     if(keysPressed["s"]){
         if(timeBtwMove["s"] <= 0){
-            board.moveCurrentHoldingPiece(new Vector2(0, 1));
+            board.moveActivePiece(new Vector2(0, 1));
             timeBtwMove["s"] = startTimeBtwMovePiece;
         }else{
             timeBtwMove["s"] -= deltaTime;
@@ -664,13 +695,13 @@ function resetGame(){
 
     board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
     Score.reset();
-    heldBlockCtx.clearRect(0, 0, heldBlockCanvas.width, heldBlockCanvas.height);
+    heldPieceCtx.clearRect(0, 0, heldPieceCanvas.width, heldPieceCanvas.height);
     instantDropKeyPreviouslyPressed = false;
     instantDropKeyPressedDown = false;
     holdKeyPreviouslyPressed = false;
     holdKeyPressedDown = false;
     gameIsRunning = true;
-    board.pickNewHoldingPiece();
+    board.pickNewActivePiece();
     requestAnimationFrame(draw);
 }
 

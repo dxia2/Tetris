@@ -3,7 +3,7 @@ let wannaPlayText = new UiText(new Vector2(100, 50), "wanna play?", "14px PressS
 let startButton = new UiButton(new Vector2(25, 200), 150, 75, "black", 5, new UiText(new Vector2(0, 0), "Start Game", "14px PressStart2P", "black", true), true, 
     function(){
         requestAnimationFrame(draw);
-        board.pickNewHoldingPiece();
+        board.pickNewActivePiece();
         this.isActive = false;
     }
 );
