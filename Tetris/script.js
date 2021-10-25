@@ -119,6 +119,8 @@ class Board{
             // if so, pick a new active piece
             this.lockInActivePiece();
             this.pickNewActivePiece();
+            // Since we are picking a new piece, the player can select a new piece to hold
+            this.playerPressHoldPiece = false;
             return true;
         }
         // if it hits another tile horizontally, simply stop it from moving into that tile
@@ -140,28 +142,31 @@ class Board{
     // Function that sets the active piece's position on the grid to be a certain color
     updateActivePiecePositionOnBoard(color){
         for(let i = 0; i < this.activePiece.shape.length; i++){
-            if(this.activePiece.getShapePosition(i).x >= 0 
-            && this.activePiece.getShapePosition(i).x < COLUMNS
-            && this.activePiece.getShapePosition(i).y >= 0
-            && this.activePiece.getShapePosition(i).y < ROWS){
-                this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].color = color;
-            }
+            // if(this.activePiece.getShapePosition(i).x >= 0 
+            // && this.activePiece.getShapePosition(i).x < COLUMNS
+            // && this.activePiece.getShapePosition(i).y >= 0
+            // && this.activePiece.getShapePosition(i).y < ROWS){
+                
+            // }
+            this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].color = color;
             
         }
     }
-
+    // Locks in the active piece
     lockInActivePiece(){
+        // Sets the elements on the grid of the active piece to have "isLocked = true"
         for(let i = 0; i < this.activePiece.shape.length; i++){
             this.grid[this.activePiece.getShapePosition(i).x][this.activePiece.getShapePosition(i).y].isLocked = true;
         }
-        this.playerPressHoldPiece = false;
         this.rowIsComplete();
     }
     // Check if a row is completed
     rowIsComplete(){
+        // Loop through all the rows
         for(let y = ROWS - 1; y >= 0; y--){
             let rowIsComplete = true;
             for(let x = 0; x < COLUMNS; x++){
+                // If there is one grid cell that is not locked, the row cannot be complete
                 if(!this.grid[x][y].isLocked){
                     rowIsComplete = false;
                 }
@@ -172,7 +177,7 @@ class Board{
                     this.grid[x][y].isLocked = false;
                     this.grid[x][y].color = 0;
                 }
-                // Move everything in the grid down by one
+                // Move everything in the grid above it down by one
                 for(let a = y; a >= 0; a--){
                     for(let b = 0; b < COLUMNS; b++){
                         if(a != 0){
@@ -183,38 +188,41 @@ class Board{
                             this.grid[b][a].isLocked = isLocked;
                             this.grid[b][a].color = color;
                         }else{
+                            // If a == 0, that means we are at the top of the grid and there is nothing to move down
                             this.grid[b][a].isLocked = false;
                             this.grid[b][a].color = 0;
                         }
                     }
                 }
+                // Add score
                 Score.addScore(this);
                 // increment the y because we need to check the same row again after everything was moved down
                 y++;
             }
         }
     }
-
+    // Function that instantly drops the active piece
     instantDrop(){
         let droppingBlock = true;
+        // While there is nothing under it, move down one space
         while(droppingBlock){
             if(this.moveActivePiece(new Vector2(0, 1))){
                 droppingBlock = false;
             }
         }
     }
-
+    // Function that is called whenever the player wants to hold a piece
     holdPiece(){
-
+        // If the active piece is the same as the held piece, there is no point in trying to swap them
         if(this.holdingPiece === this.activePiece){
             return;
         }
-
+        // If the holding piece == null, set it to be the active piece, and clear the space where the active piece was
         if(this.holdingPiece === null){
             this.holdingPiece = this.activePiece;
 
-            heldPieceCtx.clearRect(0, 0, heldPieceCanvasWidth, heldPieceCanvasHeight);
-            // heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+            holdingPieceCtx.clearRect(0, 0, holdingPieceCanvasWidth, holdingPieceCanvasHeight);
+
             for(let i = 0; i < this.holdingPiece.shape.length; i++){
                 board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
             }
@@ -223,6 +231,8 @@ class Board{
 
             this.pickNewActivePiece();
         }else{
+            // If the holding piece is not == null, and the player hasnt already swapped the pieces
+            // Switch the active piece with the holding piece
             if(!this.playerPressHoldPiece){
 
                 let activePiece = this.activePiece;
@@ -230,11 +240,10 @@ class Board{
                 this.holdingPiece = activePiece;
 
 
-                heldPieceCtx.clearRect(0, 0, heldPieceCanvasWidth, heldPieceCanvasHeight);
-                // heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+                holdingPieceCtx.clearRect(0, 0, holdingPieceCanvasWidth, holdingPieceCanvasHeight);
+
                 for(let i = 0; i < this.holdingPiece.shape.length; i++){
                     board.grid[this.holdingPiece.getShapePosition(i).x][this.holdingPiece.getShapePosition(i).y].color = 0;
-                    
                 }
 
                 this.activePiece.rotationIndex = 0;
@@ -248,24 +257,24 @@ class Board{
                 this.playerPressHoldPiece = true;
             }
         }
-
+        // Draw the holding piece onto the held piece canvas
         for(let i = 0; i < this.holdingPiece.shape.length; i++){
-            heldPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
-            heldPieceCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
+            holdingPieceCtx.fillStyle = COLORS[this.holdingPiece.color - 1].returnRGB();
+            holdingPieceCtx.fillRect(this.holdingPiece.shape[i].x * BLOCKSIZE, this.holdingPiece.shape[i].y * BLOCKSIZE, BLOCKSIZE, BLOCKSIZE);
         
             let darkerColor = getDarkerColor(COLORS[this.holdingPiece.color - 1]);
 
-            heldPieceCtx.fillStyle = darkerColor.returnRGB();
+            holdingPieceCtx.fillStyle = darkerColor.returnRGB();
             let x = (this.holdingPiece.shape[i].x * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
             let y = (this.holdingPiece.shape[i].y * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
-            heldPieceCtx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
+            holdingPieceCtx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
         }
 
         this.holdingPiece.position = new Vector2(this.startingPosition.x, this.startingPosition.y);
     }
 }
 
-
+// Class that contains information about the next 3 pieces
 class NextPieces{
     nextPiecesCanvas;
     nextPiecesCtx;
@@ -278,20 +287,24 @@ class NextPieces{
 
         this.nextPiecesCanvas.width = canvasWidth;
         this.nextPiecesCanvas.height = canvasHeight;
-
+        // all the different pieces that are possible
         this.pieces = pieces;
 
         this.initialize();
     }
 
     initialize(){
+        // Calculate the next 3 pieces
         this.nextPieces = [this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)], this.pieces[randomInteger(this.pieces.length - 1)]];
     }
-
+    // Updates the next pieces canvas
     updateCanvas(){
         this.nextPiecesCtx.clearRect(0, 0, this.nextPiecesCanvas.width, this.nextPiecesCanvas.height);
+        // Loop through all the elements in the nextPieces array
         for(let i = 0; i < this.nextPieces.length; i++){
+            // Calculate how far down to draw the pieces
             let yOffset = i * PIECESMAXSIZE;
+            // Loop through all the individual pieces that make up the shape of the next piece and draw them
             for(let a = 0; a < this.nextPieces[i].shape.length; a++){
 
                 this.nextPiecesCtx.fillStyle = COLORS[this.nextPieces[i].color - 1].returnRGB();
@@ -300,9 +313,11 @@ class NextPieces{
                     BLOCKSIZE, BLOCKSIZE
                 );
                 
+                // Draw a slightly smaller, darker square on top to make the pieces stand out more
                 let darkerColor = getDarkerColor(COLORS[this.nextPieces[i].color - 1]);
 
                 this.nextPiecesCtx.fillStyle = darkerColor.returnRGB();
+                // Calculate position
                 let x = (this.nextPieces[i].shape[a].x * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
                 let y = ((this.nextPieces[i].shape[a].y + yOffset) * BLOCKSIZE) + (BLOCKSIZE - BLOCKSIZESHADE) / 2;
                 this.nextPiecesCtx.fillRect(x, y, BLOCKSIZESHADE, BLOCKSIZESHADE);
@@ -317,19 +332,23 @@ class NextPieces{
         return unloadedPiece;
     }
 }
-
+// class the contains information about the different pieces in the game
 class Piece{
+    // The shape refers to the current rotation the piece has and all the positions of the squares that make up the piece
     shape;
+    // rotation defines to all the different possible rotations
     rotations;
     color;
+    // Position of the piece on the grid of the board
     position;
     rotationIndex = 0;
     constructor(rotations, color){
         this.rotations = rotations;
         this.color = color;
-
+        
         this.shape = rotations[this.rotationIndex];
     }
+    // returns the position of a square that makes up the shape + the position of the shape
     getShapePosition(index){
         return new Vector2(this.shape[index].x + this.position.x, this.shape[index].y + this.position.y);
     }
@@ -354,23 +373,24 @@ class Piece{
         board.updateActivePiecePositionOnBoard(0);
         this.shape = this.rotations[this.rotationIndex];
 
+        // Check if the piece collides with the walls or other pieces or the floor when it rotates
         // Move the piece one block left and right to check if it still goes out of bounds or collides with other pieces
         if(Piece.checkCollisionAgainstWalls(this, new Vector2(0, 0)) || Piece.checkCollisionAgainstOtherPiecesRotation(this.rotations[this.rotationIndex], board.grid, this.position) || Piece.checkCollisionAgainstFloor(this, new Vector2(0, 0))){
             this.position.x++;
             if(Piece.checkCollisionAgainstWalls(this, new Vector2(0, 0)) || Piece.checkCollisionAgainstOtherPiecesRotation(this.rotations[this.rotationIndex], board.grid, this.position) || Piece.checkCollisionAgainstFloor(this, new Vector2(0, 0))){
                 this.position.x -= 2;
                 if(Piece.checkCollisionAgainstWalls(this, new Vector2(0, 0)) || Piece.checkCollisionAgainstOtherPiecesRotation(this.rotations[this.rotationIndex], board.grid, this.position) || Piece.checkCollisionAgainstFloor(this, new Vector2(0, 0))){
+                    // revert the rotation if it collides with things after moving it right one and left one
                     this.rotationIndex = originalRotationIndex;
                     this.shape = this.rotations[this.rotationIndex];
                     this.position.x++;
                 }
             }
-
         }        
         // Redraw the piece on the board
         board.updateActivePiecePositionOnBoard(board.activePiece.color);
     }
-
+    // Checks for collisions against walls based on the movement given
     static checkCollisionAgainstWalls(piece, movement){
 
         for(let i = 0; i < piece.shape.length; i++){
@@ -381,7 +401,7 @@ class Piece{
 
         return false;
     }
-
+    // Checks for collisions against the floor based on the movement given
     static checkCollisionAgainstFloor(piece, movement){
         for(let i = 0; i < piece.shape.length; i++){
             if(piece.getShapePosition(i).y + movement.y > ROWS - 1){
@@ -391,13 +411,14 @@ class Piece{
 
         return false;
     }
-
+    // Checks for collisions against other pieces horizontally
     static checkCollisionAgainstOtherPiecesHorizontally(piece, grid, movement){
+        // Make a new array with the positions of the piece plus the movement
         let newPieceShapePositions = [];
         for(let i = 0; i < piece.shape.length; i++){
             newPieceShapePositions.push(new Vector2(piece.getShapePosition(i).x + movement.x, piece.getShapePosition(i).y));
         }
-
+        // loop through all the pieces in the array and check if they overlap with anything in the grid
         for(let i = 0; i < newPieceShapePositions.length; i++){
             if(newPieceShapePositions[i].x < grid.length && newPieceShapePositions[i].x >= 0){
                 if(newPieceShapePositions[i].y < grid[newPieceShapePositions[i].x].length){
@@ -409,6 +430,7 @@ class Piece{
         }
         return false;
     }
+    // Checks for collisions against other pieces vertically
     static checkCollisionAgainstOtherPiecesVertically(piece, grid, movement){
         let newPieceShapePositions = [];
         for(let i = 0; i < piece.shape.length; i++){
@@ -426,7 +448,7 @@ class Piece{
         }
         return false;
     }
-
+    // Checks for collisions against other pieces on the board based on the new rotation given
     static checkCollisionAgainstOtherPiecesRotation(newRot, grid, piecePosition){
         for(let i = 0; i < newRot.length; i++){
             if(newRot[i].x + piecePosition.x < grid.length && newRot[i].x + piecePosition.x >= 0){
@@ -440,34 +462,40 @@ class Piece{
         return false;
     }
 }
-
+// class for keeping track of the score 
 class Score{
+    // Everything is static because the player can't have multiple scores
     static level = 1;
     static score = 0;
     static nextLevelUpThreshold = SCORELEVELINCREMENT;
     static levelTextNumber = document.getElementById("levelTextNumber");
     static scoreTextNumber = document.getElementById("scoreTextNumber");
 
+    // function for adding to the score
     static addScore(board){
-
+        // Start animation on scoreText
         startTextAnimation(scoreText);
+        // add score based on the level times SCORELEVELMULTIPLIER
         this.score += this.level * SCORELEVELMULTIPLIER;
-        console.log(this.score);
+        this.scoreTextNumber.innerHTML = this.score;
+        // If the player has enough score to level up
         if(this.score >= this.nextLevelUpThreshold){
+            // add level
             this.level++;
+            // start animation on levelText
             startTextAnimation(levelText)
             this.levelTextNumber.innerHTML = this.level;
-            this.nextLevelUpThreshold *= 2;
-            this.nextLevelUpThreshold += SCORELEVELINCREMENT;
+            // Increase the score needed to level up again
+            this.nextLevelUpThreshold += SCORELEVELINCREMENT * this.level;
         }
-        this.scoreTextNumber.innerHTML = this.score;
-
+        // reduce the delay when the active piece of the board falls
         board.startDelayBtwPieceFall = STARTPIECEDROPDELAY - (this.level - 1) * DROPSPEEDINCREASEPERLEVEL;
+        // if the drop speed is below the minimum, set it to be the minimum
         if(board.startDelayBtwPieceFall < MINDROPSPEED){
             board.startDelayBtwPieceFall = MINDROPSPEED;
         }
     }
-
+    // function that resets the level and score
     static reset(){
         this.level = 1;
         this.levelTextNumber.innerHTML = this.level;
@@ -476,26 +504,28 @@ class Score{
         this.nextLevelUpThreshold = SCORELEVELINCREMENT;
     }
 }
-
+// Varibles
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 
-let heldPieceCanvas = document.getElementById("heldPieceCanvas");
-let heldPieceCtx = heldPieceCanvas.getContext("2d");
+let holdingPieceCanvas = document.getElementById("holdingPieceCanvas");
+let holdingPieceCtx = holdingPieceCanvas.getContext("2d");
 
 let canvasWidth = 200;
 let canvasHeight = 400;
 
-let heldPieceCanvasWidth = 80;
-let heldPieceCanvasHeight = 80;
+let holdingPieceCanvasWidth = 80;
+let holdingPieceCanvasHeight = 80;
 
 canvas.width = canvasWidth;
 canvas.height = canvasHeight;
 
-heldPieceCanvas.width = heldPieceCanvasWidth;
-heldPieceCanvas.height = heldPieceCanvasHeight;
+holdingPieceCanvas.width = holdingPieceCanvasWidth;
+holdingPieceCanvas.height = holdingPieceCanvasHeight;
 
+// Define all the pieces
 let iBlock = new Piece(
+    // The different rotations of the piece
     [
     [new Vector2(0, 1), new Vector2(1, 1), new Vector2(2, 1), new Vector2(3, 1)],
     [new Vector2(2, 0), new Vector2(2, 1), new Vector2(2, 2), new Vector2(2, 3)],
@@ -564,23 +594,28 @@ let zBlock = new Piece(
     ],
     7
 )
-
+// where the pieces spwn from
 let pieceStartPositionOffset = new Vector2(4, 0);
 
+// Create next pieces and the board
 let nextPieces = new NextPieces("nextPiecesCanvas", [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], 80, 240);
 let board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], pieceStartPositionOffset);
-
+// Display the ui at the start of the game
 gameStartUI();
 
 let gameIsRunning = true;
 
+// booleans that only allow a key to be pressed once (so you can't hold the key)
 let instantDropKeyPreviouslyPressed = false;
 let instantDropKeyPressedDown = false;
 
 let holdKeyPreviouslyPressed = false;
 let holdKeyPressedDown = false;
 
+// main loop
 function draw(){
+    // Detect whether certain keys are pressed
+    // If a is pressed, move the active piece one space to the left
     if(keysPressed["a"]){
         if(timeBtwMove["a"] <= 0){
             board.moveActivePiece(new Vector2(-1, 0));
@@ -591,7 +626,7 @@ function draw(){
     }else{
         timeBtwMove["a"] = 0;
     }
-
+    // If d is pressed, move the active piece one space to the right
     if(keysPressed["d"]){
         if(timeBtwMove["d"] <= 0){
             board.moveActivePiece(new Vector2(1, 0));
@@ -602,7 +637,7 @@ function draw(){
     }else{
         timeBtwMove["d"] = 0;
     }
-
+    // if s is pressed, move the active piece one space down
     if(keysPressed["s"]){
         if(timeBtwMove["s"] <= 0){
             board.moveActivePiece(new Vector2(0, 1));
@@ -677,6 +712,7 @@ function draw(){
 
     if(gameIsRunning){
         board.draw();
+
         requestAnimationFrame(draw);
     }
 }
@@ -695,7 +731,7 @@ function resetGame(){
 
     board = new Board(ctx, STARTPIECEDROPDELAY, [iBlock, jBlock, lBlock, oBlock, sBlock, tBlock, zBlock], new Vector2(4, 0));
     Score.reset();
-    heldPieceCtx.clearRect(0, 0, heldPieceCanvas.width, heldPieceCanvas.height);
+    holdingPieceCtx.clearRect(0, 0, holdingPieceCanvas.width, holdingPieceCanvas.height);
     instantDropKeyPreviouslyPressed = false;
     instantDropKeyPressedDown = false;
     holdKeyPreviouslyPressed = false;

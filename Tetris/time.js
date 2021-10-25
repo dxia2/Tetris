@@ -6,5 +6,6 @@ requestAnimationFrame(time);
 function time(currentTime) {
     deltaTime = (currentTime - lastTime) * 0.001;
     lastTime = currentTime;
+    console.log(deltaTime);
     requestAnimationFrame(time);
 }
