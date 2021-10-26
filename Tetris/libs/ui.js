@@ -1,3 +1,4 @@
+// Library for creating UI
 class UiButton{
     position
     width;
@@ -21,7 +22,7 @@ class UiButton{
         this.isActive = isActive;
         UiButton.uiButtons.push(this);
     }
-
+    // Call this whenever this element should be drawn
     drawUi(context){
         context.strokeStyle = this.color;
         context.lineWidth = this.lineWidth;
@@ -50,7 +51,7 @@ class UiText{
         this.color = color;
         this.centered = centered;
     }
-
+    // Call this whenever this element should be drawn
     drawUi(context){
         context.font = this.font;
         context.fillStyle = this.color;
@@ -69,7 +70,7 @@ function getMousePositionOnCanvas(canvas, event){
     // Gets the mouse position on the page, then subtracts the canvas position on the page to get the mouse position in the canvas
     return new Vector2(event.clientX - rect.left, event.clientY - rect.top);
 }
-
+// Checks if a position is inside a button
 function isInsideButton(pos, button){
     return pos.x > button.position.x && pos.x < button.position.x + button.width && pos.y < button.position.y + button.height && pos.y > button.position.y;
 }

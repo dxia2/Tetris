@@ -1,3 +1,4 @@
+// Class that contains color data that can be edited
 class Color{
     r;
     g;

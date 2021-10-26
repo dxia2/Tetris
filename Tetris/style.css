@@ -1,57 +1,72 @@
+/* Use font-face to load custom font */
 @font-face {
     font-family: "PressStart2P";
     src: url("fonts/Press_Start_2P/PressStart2P.ttf");
 }
-html{
-    /* background-image: url("img/background2.png"); */
-}
-body{
+
+body {
     text-align: center;
-    /* font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; */
     font-family: 'PressStart2P';
 }
-canvas{
+
+canvas {
     border: 1px solid black;
 }
-.playerStats{
+
+/* The div that contains the level and score text */
+.playerStats {
     font-size: 16px;
     white-space: nowrap;
-    position:relative;
+    /* The position of the elements inside it should be relative to the position of this */
+    position: relative;
     height: 50px;
     width: 100px;
     margin: auto;
-    /* border: 1px solid black; */
-}
-#levelText{
-    position:absolute;
-    top:-25%; 
-    left:50%; 
-    transform:translate(-50%, 0%); 
-}
-#scoreText{
-    position: absolute;
-    top:50%; 
-    left:50%; 
-    transform:translate(-50%, -50%); 
 }
 
-.columns{
-    display:flex;
+#levelText {
+    /* The position should be absolute so it doesn't push other elements when the animation plays */
+    position: absolute;
+    top: 0%;
+    left: 50%;
+    /* Move the element -50% on the x and -50% on the y so the position is calculated from the center */
+    transform: translate(-50%, -50%);
+}
+
+#scoreText {
+    /* The position should be absolute so it doesn't push other elements when the animation plays */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* Move the element -50% on the x and -50% on the y so the position is calculated from the center */
+    transform: translate(-50%, -50%);
+}
+
+.columns {
+    /* flex makes elements take up as much space as they can */
+    /* This gives the page a 2 column layout  */
+    display: flex;
     width: 50%;
     margin: 50px auto;
 }
-.leftColumn{
-    flex: 50%;
-}
-.rightColumn{
+
+.leftColumn {
+    /* Make the left column take up 50% of the space */
     flex: 50%;
 }
 
-.controlsHeader{
+.rightColumn {
+    /* Make the right column take up 50% of the space */
+    flex: 50%;
+}
+
+/* The header on the paragraph that describes the controls */
+.controlsHeader {
     font-size: 25px;
     text-decoration: underline;
 }
-.controls{
+/* Paragraph that describes the controls */
+.controls {
     margin: 15px 200px;
     padding: 15px 25px;
     line-height: 25px;
