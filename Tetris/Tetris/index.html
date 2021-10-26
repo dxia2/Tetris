@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Tetris</title>
+    <!-- Preload the custom font -->
+    <link rel="preload" href="fonts/Press_Start_2P/PressStart2P.ttf" as="font">
+    <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+    <!-- game ui can be split into 2 columns -->
+    <div class="columns">
+        <!-- left column which contains information such as the score, level, and pieces that are going to come next -->
+        <div class="leftColumn">
+            <div class="playerStats">
+                <p id="scoreText">Score: <span id="scoreTextNumber">0</span></p>
+                <p id="levelText">Level: <span id="levelTextNumber">1</span></p>
+            </div>
+
+            <p>Hold</p>
+            <canvas id="holdingPieceCanvas"></canvas>
+            <p>Next</p>
+            <canvas id="nextPiecesCanvas"></canvas>
+
+        </div>
+        <!-- right column which contains the actual game and title -->
+        <div class="rightColumn">
+            <h1>TETRIS</h1>
+            <!-- game canvas -->
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Header and paragraph for the controls of the game -->
+    <h2 class="controlsHeader">Controls</h2>
+    <p class="controls">
+        "A" and "D" to move piece left and right <br>
+        "S" to move piece down <br>
+        "W" to quick drop (instantly moves the piece down as low as it can go) <br>
+        "Q" and "E" to rotate <br>
+        "F" to hold the piece (saves it for later) <br>
+        press "F" again to access held piece
+    </p>
+    <!-- load libraries -->
+    <script src="libs/colors.js"></script>
+    <script src="libs/transforms.js"></script>
+    <script src="libs/ui.js"></script>
+    <!-- Load scripts -->
+    <script src="input.js"></script>
+    <script src="time.js"></script>
+    <script src="constants.js"></script>
+    <script src="gameUi.js"></script>
+    <script src="script.js"></script>
+    <script src="animations.js"></script>
+
+</body>
+
+</html>
